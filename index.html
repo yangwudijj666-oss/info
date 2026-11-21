@@ -219,7 +219,7 @@
         </div>
     </div>
 
-    <!-- 第四组：邮箱、地址、底部双行信息 -->
+    <!-- 第四组：邮箱、地址 -->
     <div class="group">
         <div class="row" onclick="editItem('email', '邮箱', true)">
             <div class="row-left">邮箱</div>
@@ -235,6 +235,10 @@
                 <span class="arrow">&gt;</span>
             </div>
         </div>
+    </div>
+
+    <!-- 第五组：底部双行信息（独立分组，保留上方纯黑间隙） -->
+    <div class="group">
         <div class="row" onclick="editBottomCard()">
             <div class="row-left double-line">
                 <span class="bottom-main-text" id="val-bottomId">点击编辑</span>
@@ -310,7 +314,7 @@
             const collegeEl = document.getElementById('val-college');
             const gradeEl = document.getElementById('val-grade');
 
-            const newId = prompt('1/4 修改第一行信息（红字遮挡处）', idEl.innerText);
+            const newId = prompt('1/4 修改第一行信息（学号/工号）', idEl.innerText);
             if (newId !== null && newId.trim() !== '') {
                 idEl.innerText = newId.trim();
                 localStorage.setItem('bottomId', newId.trim());
@@ -322,37 +326,6 @@
                 localStorage.setItem('college', newCollege.trim());
             }
 
-            const newDegree = prompt('3/4 修改学历层次（如：本科生/研究生）', degreeEl.innerText);
-            if (newDegree !== null && newDegree.trim() !== '') {
-                degreeEl.innerText = newDegree.trim();
-                localStorage.setItem('degree', newDegree.trim());
-            }
-
-            const newGrade = prompt('4/4 修改年级（如：2024）', gradeEl.innerText);
-            if (newGrade !== null && newGrade.trim() !== '') {
-                gradeEl.innerText = newGrade.trim();
-                localStorage.setItem('grade', newGrade.trim());
-            }
-        }
-
-        function toggleGender() {
-            const el = document.getElementById('val-userGender');
-            const next = el.innerText === '男' ? '女' : '男';
-            el.innerText = next;
-            localStorage.setItem('userGender', next);
-        }
-
-        function changeAvatar(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64 = e.target.result;
-                document.getElementById('avatarBox').innerHTML = `<img src="${base64}">`;
-                localStorage.setItem('userAvatar', base64);
-            };
-            reader.readAsDataURL(file);
-        }
-    </script>
+            const newDegree = prompt('3/4 修改学历层次（如：本科生/研究生）', degree
 </body>
 </html>
