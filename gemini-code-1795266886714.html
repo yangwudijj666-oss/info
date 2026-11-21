@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="个人信息">
+    <title>个人信息</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .navbar {
+            position: sticky;
+            top: 0;
+            height: 44px;
+            background-color: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 0 16px;
+        }
+        .navbar-back {
+            position: absolute;
+            left: 16px;
+            font-size: 24px;
+            color: #ffffff;
+            font-weight: 300;
+            line-height: 1;
+        }
+        .navbar-title {
+            font-size: 17px;
+            font-weight: 600;
+        }
+        .group {
+            background-color: #191919;
+            margin-bottom: 10px;
+        }
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 16px;
+            position: relative;
+            cursor: pointer;
+        }
+        .row:active {
+            background-color: #252525;
+        }
+        .row:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            left: 16px;
+            right: 0;
+            bottom: 0;
+            height: 0.5px;
+            background-color: #2c2c2c;
+        }
+        .row-left {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+        .row-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-size: 15px;
+            color: #888888;
+            margin-left: 12px;
+            text-align: right;
+        }
+        .arrow {
+            margin-left: 8px;
+            color: #555555;
+            font-size: 14px;
+            font-family: -apple-system, sans-serif;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .avatar-box {
+            width: 58px;
+            height: 58px;
+            border-radius: 8px;
+            background: radial-gradient(circle at 30% 30%, #262626, #141414);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .avatar-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .external-prefix {
+            color: #888888;
+        }
+        .external-suffix {
+            color: #e67e22;
+        }
+        .shield-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            flex-shrink: 0;
+        }
+        .double-line {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+        .bottom-main-text {
+            font-size: 16px;
+            color: #ffffff;
+        }
+        .sub-text {
+            font-size: 13px;
+            color: #777777;
+        }
+        #avatarInput {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="navbar-back">‹</div>
+        <div class="navbar-title">个人信息</div>
+    </div>
+
+    <!-- 第一组：头像、姓名、别名、性别 -->
+    <div class="group" style="margin-top: 6px;">
+        <div class="row" style="padding: 12px 16px;" onclick="document.getElementById('avatarInput').click()">
+            <div class="row-left">头像</div>
+            <div class="row-right">
+                <div class="avatar-box" id="avatarBox"></div>
+                <span class="arrow">&gt;</span>
+            </div>
+            <input type="file" id="avatarInput" accept="image/*" onchange="changeAvatar(event)">
+        </div>
+        <div class="row" onclick="editItem('userName', '修改姓名', false)">
+            <div class="row-left">姓名</div>
+            <div class="row-right">
+                <span id="val-userName">点击编辑</span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+        <div class="row" onclick="editItem('userAlias', '修改别名', true)">
+            <div class="row-left">别名</div>
+            <div class="row-right">
+                <span id="val-userAlias">无</span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+        <div class="row" onclick="toggleGender()">
+            <div class="row-left">性别</div>
+            <div class="row-right">
+                <span id="val-userGender">男</span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二组：对外信息显示 -->
+    <div class="group">
+        <div class="row" onclick="editExternalInfo()">
+            <div class="row-left">对外信息显示</div>
+            <div class="row-right">
+                <span class="external-prefix" id="val-externalPrefix">点击编辑</span><span class="external-suffix" id="val-externalSuffix">@重庆邮电大学</span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第三组：工作签名、所属企业、发票抬头 -->
+    <div class="group">
+        <div class="row" onclick="editItem('workSignature', '工作签名', false)">
+            <div class="row-left">工作签名</div>
+            <div class="row-right">
+                <span id="val-workSignature"></span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+        <div class="row" onclick="editItem('company', '所属企业', false)">
+            <div class="row-left">所属企业</div>
+            <div class="row-right">
+                <svg class="shield-icon" viewBox="0 0 24 24" fill="none" stroke="#28c76f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                </svg>
+                <span id="val-company">重庆邮电大学</span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+        <div class="row" onclick="editItem('invoiceTitle', '发票抬头', true)">
+            <div class="row-left">发票抬头</div>
+            <div class="row-right">
+                <span id="val-invoiceTitle">无</span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第四组：邮箱、地址、底部双行信息 -->
+    <div class="group">
+        <div class="row" onclick="editItem('email', '邮箱', true)">
+            <div class="row-left">邮箱</div>
+            <div class="row-right">
+                <span id="val-email">无</span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+        <div class="row" onclick="editItem('address', '地址', true)">
+            <div class="row-left">地址</div>
+            <div class="row-right">
+                <span id="val-address">无</span>
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+        <div class="row" onclick="editBottomCard()">
+            <div class="row-left double-line">
+                <span class="bottom-main-text" id="val-bottomId">点击编辑</span>
+                <span class="sub-text">
+                    <span id="val-degree">本科生</span>/<span id="val-college">电子科学与工程学院</span>/<span id="val-grade">2024</span>
+                </span>
+            </div>
+            <div class="row-right">
+                <span class="arrow">&gt;</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const keys = [
+            'userName', 'userAlias', 'userGender',
+            'externalPrefix', 'externalSuffix',
+            'workSignature', 'company', 'invoiceTitle',
+            'email', 'address', 'bottomId',
+            'degree', 'college', 'grade'
+        ];
+
+        window.onload = function() {
+            keys.forEach(key => {
+                const saved = localStorage.getItem(key);
+                if (saved !== null) {
+                    const el = document.getElementById('val-' + key);
+                    if (el) el.innerText = saved;
+                }
+            });
+            const savedAvatar = localStorage.getItem('userAvatar');
+            if (savedAvatar) {
+                document.getElementById('avatarBox').innerHTML = `<img src="${savedAvatar}">`;
+            }
+        };
+
+        function editItem(key, title, allowEmptyAsNone) {
+            const el = document.getElementById('val-' + key);
+            const current = el.innerText;
+            const inputVal = (allowEmptyAsNone && current === '无') ? '' : current;
+            const result = prompt(title, inputVal);
+            if (result !== null) {
+                const trimmed = result.trim();
+                const finalVal = (trimmed === '' && allowEmptyAsNone) ? '无' : trimmed;
+                if (finalVal !== '' || !allowEmptyAsNone) {
+                    el.innerText = finalVal;
+                    localStorage.setItem(key, finalVal);
+                }
+            }
+        }
+
+        function editExternalInfo() {
+            const prefixEl = document.getElementById('val-externalPrefix');
+            const suffixEl = document.getElementById('val-externalSuffix');
+            
+            const newPrefix = prompt('1/2 修改对外显示名称（@前面的部分）', prefixEl.innerText);
+            if (newPrefix !== null && newPrefix.trim() !== '') {
+                prefixEl.innerText = newPrefix.trim();
+                localStorage.setItem('externalPrefix', newPrefix.trim());
+            }
+            
+            const newSuffix = prompt('2/2 修改后缀机构（默认 @重庆邮电大学）', suffixEl.innerText);
+            if (newSuffix !== null && newSuffix.trim() !== '') {
+                suffixEl.innerText = newSuffix.trim();
+                localStorage.setItem('externalSuffix', newSuffix.trim());
+            }
+        }
+
+        // 底部双行信息：支持分别修改第一行、学历、学院、年级
+        function editBottomCard() {
+            const idEl = document.getElementById('val-bottomId');
+            const degreeEl = document.getElementById('val-degree');
+            const collegeEl = document.getElementById('val-college');
+            const gradeEl = document.getElementById('val-grade');
+
+            const newId = prompt('1/4 修改第一行信息（红字遮挡处）', idEl.innerText);
+            if (newId !== null && newId.trim() !== '') {
+                idEl.innerText = newId.trim();
+                localStorage.setItem('bottomId', newId.trim());
+            }
+
+            const newCollege = prompt('2/4 修改学院名称', collegeEl.innerText);
+            if (newCollege !== null && newCollege.trim() !== '') {
+                collegeEl.innerText = newCollege.trim();
+                localStorage.setItem('college', newCollege.trim());
+            }
+
+            const newDegree = prompt('3/4 修改学历层次（如：本科生/研究生）', degreeEl.innerText);
+            if (newDegree !== null && newDegree.trim() !== '') {
+                degreeEl.innerText = newDegree.trim();
+                localStorage.setItem('degree', newDegree.trim());
+            }
+
+            const newGrade = prompt('4/4 修改年级（如：2024）', gradeEl.innerText);
+            if (newGrade !== null && newGrade.trim() !== '') {
+                gradeEl.innerText = newGrade.trim();
+                localStorage.setItem('grade', newGrade.trim());
+            }
+        }
+
+        function toggleGender() {
+            const el = document.getElementById('val-userGender');
+            const next = el.innerText === '男' ? '女' : '男';
+            el.innerText = next;
+            localStorage.setItem('userGender', next);
+        }
+
+        function changeAvatar(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result;
+                document.getElementById('avatarBox').innerHTML = `<img src="${base64}">`;
+                localStorage.setItem('userAvatar', base64);
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
