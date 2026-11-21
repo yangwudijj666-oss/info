@@ -1,1503 +1,393 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="企业微信">
-    <title>企业微信</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-        :root {
-            --bg-black: #000000;
-            --bg-card: #191919;
-            --bg-card-active: #252525;
-            --border-line: #262626;
-            --text-primary: #ffffff;
-            --text-secondary: #888888;
-            --text-muted: #555555;
-            --brand-blue: #2f7cf6;
-            --brand-green: #28c76f;
-            --brand-orange: #e67e22;
-            --safe-top: env(safe-area-inset-top, 0px);
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-black);
-            color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
-            overflow: hidden;
-        }
-
-        /* 主应用容器（自适应手机全屏，电脑端居中手机比例展示） */
-        #app {
-            width: 100%;
-            max-width: 480px;
-            height: 100%;
-            height: 100dvh;
-            margin: 0 auto;
-            background-color: var(--bg-black);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        /* 顶部导航栏 */
-        .navbar {
-            flex-shrink: 0;
-            padding-top: var(--safe-top);
-            height: calc(44px + var(--safe-top));
-            background-color: var(--bg-black);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-left: 16px;
-            padding-right: 16px;
-            position: relative;
-            z-index: 20;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .nav-title {
-            position: absolute;
-            left: 50%;
-            bottom: 11px;
-            transform: translateX(-50%);
-            font-size: 17px;
-            font-weight: 600;
-            max-width: 62%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .nav-left, .nav-right {
-            height: 44px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            z-index: 2;
-        }
-        .nav-btn {
-            color: var(--text-primary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 主内容滚动区 */
-        .tab-views {
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-        }
-        .tab-page {
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            display: none;
-            padding-bottom: 20px;
-        }
-        .tab-page.active {
-            display: block;
-        }
-
-        /* 通用搜索框 */
-        .search-wrap {
-            padding: 6px 14px 8px;
-            background: var(--bg-black);
-        }
-        .search-bar {
-            height: 34px;
-            background: var(--bg-card);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 12px;
-            gap: 6px;
-        }
-        .search-bar input {
-            width: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--text-primary);
-            font-size: 14px;
-            text-align: center;
-        }
-        .search-bar input:focus {
-            text-align: left;
-        }
-        .search-bar input::placeholder {
-            color: #666666;
-        }
-
-        /* 通用分组卡片与列表行 */
-        .group {
-            background-color: var(--bg-card);
-            margin-bottom: 10px;
-        }
-        .row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px;
-            position: relative;
-            cursor: pointer;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .row:active {
-            background-color: var(--bg-card-active);
-        }
-        .row:not(:last-child)::after {
-            content: "";
-            position: absolute;
-            left: 52px;
-            right: 0;
-            bottom: 0;
-            height: 0.5px;
-            background-color: var(--border-line);
-        }
-        .plain-group .row:not(:last-child)::after {
-            left: 16px;
-        }
-        .row-left {
-            display: flex;
-            align-items: center;
-            font-size: 16px;
-            color: var(--text-primary);
-            gap: 14px;
-        }
-        .row-right {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            font-size: 15px;
-            color: var(--text-secondary);
-            margin-left: 12px;
-            text-align: right;
-        }
-        .arrow {
-            margin-left: 8px;
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        /* ================= 1. 消息页（1:1 还原截图5） ================= */
-        .msg-subbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 6px 22px 10px;
-            border-bottom: 0.5px solid #181818;
-            font-size: 13px;
-            color: #aaaaaa;
-        }
-        .msg-subbar-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-        .chat-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            background: var(--bg-black);
-            position: relative;
-            cursor: pointer;
-        }
-        .chat-item:active {
-            background: var(--bg-card);
-        }
-        .chat-item::after {
-            content: "";
-            position: absolute;
-            left: 74px;
-            right: 0;
-            bottom: 0;
-            height: 0.5px;
-            background: #1a1a1a;
-        }
-        .chat-avatar {
-            width: 46px;
-            height: 46px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            flex-shrink: 0;
-            position: relative;
-            font-size: 20px;
-        }
-        .badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            min-width: 18px;
-            height: 18px;
-            padding: 0 5px;
-            border-radius: 9px;
-            background: #fa5151;
-            color: #fff;
-            font-size: 11px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .chat-body {
-            flex: 1;
-            margin-left: 12px;
-            overflow: hidden;
-        }
-        .chat-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-        .chat-name {
-            font-size: 16px;
-            color: var(--text-primary);
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .chat-time {
-            font-size: 12px;
-            color: var(--text-muted);
-            flex-shrink: 0;
-            margin-left: 8px;
-        }
-        .chat-msg {
-            font-size: 13px;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* ================= 2. 文档页（1:1 还原截图4） ================= */
-        .doc-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            padding: 10px 8px 12px;
-            border-bottom: 0.5px solid #1d1d1d;
-            font-size: 13px;
-            color: #bbbbbb;
-        }
-        .doc-tool-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-        .doc-item {
-            display: flex;
-            align-items: center;
-            padding: 13px 16px;
-            position: relative;
-            cursor: pointer;
-        }
-        .doc-item:active {
-            background: var(--bg-card);
-        }
-        .doc-item::after {
-            content: "";
-            position: absolute;
-            left: 56px;
-            right: 16px;
-            bottom: 0;
-            height: 0.5px;
-            background: #1d1d1d;
-        }
-        .doc-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 14px;
-            flex-shrink: 0;
-            color: #fff;
-            font-size: 15px;
-        }
-        .doc-body {
-            flex: 1;
-            overflow: hidden;
-        }
-        .doc-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-        .doc-title {
-            font-size: 16px;
-            color: #ffffff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding-right: 8px;
-        }
-        .doc-date {
-            font-size: 12px;
-            color: var(--text-muted);
-            flex-shrink: 0;
-        }
-        .doc-sub {
-            font-size: 13px;
-            color: #777777;
-        }
-
-        /* ================= 3. 通讯录页（1:1 还原截图3） ================= */
-        .section-caption {
-            padding: 10px 16px 6px;
-            font-size: 13px;
-            color: #777777;
-            background: #121212;
-        }
-        .contact-sq-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 7px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            color: #fff;
-        }
-        .folder-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 7px;
-            background: #23272e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .dept-members {
-            display: none;
-            background: #121212;
-        }
-        .dept-members.open {
-            display: block;
-        }
-        .member-row {
-            padding: 11px 16px 11px 64px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-top: 0.5px solid #222222;
-            cursor: pointer;
-        }
-        .contacts-footer {
-            text-align: center;
-            padding: 18px 0;
-            font-size: 14px;
-            color: #666666;
-        }
-
-        /* ================= 4. 工作台页（1:1 还原截图2） ================= */
-        .wb-banner {
-            margin: 4px 12px 10px;
-            border-radius: 10px;
-            overflow: hidden;
-            background: linear-gradient(135deg, #c8d6e5 0%, #a4b8d0 55%, #8fa8c8 100%);
-            padding: 14px 16px 10px;
-            position: relative;
-            cursor: pointer;
-        }
-        .wb-banner-school {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-            font-weight: 700;
-            color: #1b4f3e;
-            margin-bottom: 6px;
-        }
-        .wb-banner-main {
-            font-size: 23px;
-            font-weight: 800;
-            color: #1a56b8;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        .wb-banner-sub {
-            font-size: 13px;
-            font-weight: 600;
-            color: #2c4c7e;
-            margin-bottom: 6px;
-        }
-        .wb-banner-tip {
-            font-size: 9px;
-            color: #333333;
-            text-align: center;
-            opacity: 0.75;
-        }
-        .wb-card {
-            margin: 0 12px 12px;
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 14px 10px 18px;
-        }
-        .wb-card-title {
-            padding: 0 8px 14px;
-            font-size: 14px;
-            color: #888888;
-        }
-        .wb-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px 6px;
-        }
-        .wb-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-        .wb-item:active {
-            opacity: 0.7;
-        }
-        .wb-app-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 20px;
-        }
-        .wb-app-name {
-            font-size: 12px;
-            color: #e0e0e0;
-            text-align: center;
-            line-height: 1.3;
-            max-width: 68px;
-        }
-
-        /* ================= 5. “我” 主界面（1:1 还原截图1） ================= */
-        .me-card {
-            margin: 6px 12px 12px;
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 18px 16px 14px;
-            cursor: pointer;
-        }
-        .me-card:active {
-            background: var(--bg-card-active);
-        }
-        .me-card-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            min-height: 82px;
-        }
-        .me-card-left {
-            flex: 1;
-            padding-right: 12px;
-        }
-        .me-corp-row {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 15px;
-            font-weight: 600;
-            color: #aaaaaa;
-            margin-bottom: 14px;
-        }
-        .me-big-name {
-            font-size: 22px;
-            font-weight: 600;
-            color: #ffffff;
-            margin-bottom: 4px;
-        }
-        .me-avatar-sq {
-            width: 56px;
-            height: 56px;
-            border-radius: 8px;
-            background: radial-gradient(circle at 30% 30%, #2a2a2a, #121212);
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .me-avatar-sq img, .avatar-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .me-card-bottom {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 0.5px solid #282828;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 14px;
-            color: #888888;
-        }
-        .me-menu-icon {
-            width: 22px;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        /* ================= 底部 5 栏 TabBar ================= */
-        .tabbar {
-            flex-shrink: 0;
-            height: calc(52px + var(--safe-bottom));
-            padding-bottom: var(--safe-bottom);
-            background-color: #111111;
-            border-top: 0.5px solid #222222;
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            z-index: 20;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .tab-btn {
-            flex: 1;
-            height: 52px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            color: #888888;
-            cursor: pointer;
-            position: relative;
-        }
-        .tab-btn.active {
-            color: var(--brand-blue);
-        }
-        .tab-btn svg {
-            width: 22px;
-            height: 22px;
-        }
-        .tab-label {
-            font-size: 10px;
-            font-weight: 500;
-        }
-        .tab-badge {
-            position: absolute;
-            top: 4px;
-            left: 55%;
-            min-width: 17px;
-            height: 17px;
-            padding: 0 4px;
-            border-radius: 9px;
-            background: #fa5151;
-            color: #fff;
-            font-size: 11px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* ================= 二级推入页（个人信息 & 聊天窗） ================= */
-        .sub-page {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            width: 100%;
-            max-width: 480px;
-            background: var(--bg-black);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            transform: translateX(150%);
-            transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        .sub-page.open {
-            transform: translateX(-50%);
-        }
-        .sub-scroll {
-            flex: 1;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: calc(24px + var(--safe-bottom));
-        }
-
-        /* 聊天详情窗口 */
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 14px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-        .msg-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-        .msg-row.mine {
-            flex-direction: row-reverse;
-        }
-        .msg-bubble {
-            max-width: 72%;
-            padding: 10px 13px;
-            border-radius: 10px;
-            font-size: 15px;
-            line-height: 1.45;
-            background: var(--bg-card);
-            color: #ffffff;
-            word-break: break-word;
-        }
-        .msg-row.mine .msg-bubble {
-            background: var(--brand-blue);
-        }
-        .chat-input-bar {
-            flex-shrink: 0;
-            padding: 8px 12px calc(8px + var(--safe-bottom));
-            background: #141414;
-            border-top: 0.5px solid #262626;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .chat-input-bar input {
-            flex: 1;
-            height: 36px;
-            background: #222222;
-            border: none;
-            border-radius: 8px;
-            padding: 0 12px;
-            color: #ffffff;
-            font-size: 15px;
-            outline: none;
-        }
-        .send-btn {
-            height: 36px;
-            padding: 0 14px;
-            border-radius: 8px;
-            background: var(--brand-blue);
-            color: #ffffff;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* “个人信息”页专属样式 */
-        .avatar-box {
-            width: 58px;
-            height: 58px;
-            border-radius: 8px;
-            background: radial-gradient(circle at 30% 30%, #262626, #141414);
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .external-prefix { color: #888888; }
-        .external-suffix { color: #e67e22; }
-        .shield-icon {
-            width: 16px;
-            height: 16px;
-            margin-right: 4px;
-            flex-shrink: 0;
-        }
-        .double-line {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 6px;
-        }
-        .bottom-main-text { font-size: 16px; color: #ffffff; }
-        .sub-text { font-size: 13px; color: #777777; }
-        #avatarInput { display: none; }
-
-        /* 自定义暗黑弹窗 */
-        .modal-mask {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.75);
-            z-index: 999;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .modal-box {
-            width: 100%;
-            max-width: 320px;
-            background: #222222;
-            border-radius: 14px;
-            overflow: hidden;
-            border: 0.5px solid #333333;
-        }
-        .modal-title {
-            padding: 18px 16px 12px;
-            text-align: center;
-            font-size: 16px;
-            font-weight: 600;
-            color: #ffffff;
-        }
-        .modal-inputs {
-            padding: 0 16px 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .modal-input {
-            width: 100%;
-            padding: 10px 12px;
-            background: #141414;
-            border: 0.5px solid #3a3a3a;
-            border-radius: 8px;
-            color: #ffffff;
-            font-size: 16px;
-            outline: none;
-            user-select: text;
-            -webkit-user-select: text;
-        }
-        .modal-btns {
-            display: flex;
-            border-top: 0.5px solid #333333;
-        }
-        .modal-btn {
-            flex: 1;
-            padding: 13px 0;
-            text-align: center;
-            font-size: 16px;
-            background: transparent;
-            border: none;
-            color: #888888;
-            cursor: pointer;
-        }
-        .modal-btn:last-child {
-            border-left: 0.5px solid #333333;
-            color: #3b82f6;
-            font-weight: 600;
-        }
-        .modal-btn:active { background: #2c2c2c; }
-
-        /* 轻提示 Toast */
-        .toast {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(38, 38, 38, 0.95);
-            color: #fff;
-            padding: 10px 18px;
-            border-radius: 10px;
-            font-size: 14px;
-            z-index: 1200;
-            display: none;
-            border: 0.5px solid #3a3a3a;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>企业微信</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;background:#000;color:#fff;font-family:-apple-system,"PingFang SC",sans-serif;overflow:hidden}
+#app{width:100%;max-width:480px;height:100%;height:100dvh;margin:0 auto;display:flex;flex-direction:column;background:#000;position:relative}
+.navbar{flex-shrink:0;padding-top:env(safe-area-inset-top,0px);height:calc(44px + env(safe-area-inset-top,0px));background:#000;display:flex;align-items:center;justify-content:space-between;padding-left:16px;padding-right:16px;position:relative;z-index:20;user-select:none}
+.nav-title{position:absolute;left:50%;bottom:11px;transform:translateX(-50%);font-size:17px;font-weight:600;max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav-left,.nav-right{height:44px;display:flex;align-items:center;gap:14px;z-index:2}
+.nav-btn{color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tab-views{flex:1;overflow:hidden;position:relative}
+.tab-page{width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding-bottom:20px}
+.tab-page.active{display:block}
+.search-wrap{padding:6px 14px 8px;background:#000}
+.search-bar{height:34px;background:#191919;border-radius:8px;display:flex;align-items:center;padding:0 12px;gap:6px}
+.search-bar input{width:100%;background:transparent;border:none;outline:none;color:#fff;font-size:14px;text-align:center}
+.search-bar input:focus{text-align:left}
+.search-bar input::placeholder{color:#666}
+.group{background:#191919;margin-bottom:10px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;position:relative;cursor:pointer;user-select:none}
+.row:active{background:#252525}
+.row:not(:last-child)::after{content:"";position:absolute;left:52px;right:0;bottom:0;height:.5px;background:#262626}
+.plain-group .row:not(:last-child)::after{left:16px}
+.row-left{display:flex;align-items:center;font-size:16px;color:#fff;gap:14px}
+.row-right{display:flex;align-items:center;justify-content:flex-end;font-size:15px;color:#888;margin-left:12px;text-align:right}
+.arrow{margin-left:8px;color:#555;font-size:14px;font-weight:600;flex-shrink:0}
+.msg-subbar{display:flex;align-items:center;justify-content:space-between;padding:6px 22px 10px;border-bottom:.5px solid #181818;font-size:13px;color:#aaa}
+.msg-subbar span{display:flex;align-items:center;gap:5px;cursor:pointer}
+.chat-item{display:flex;align-items:center;padding:12px 16px;background:#000;position:relative;cursor:pointer}
+.chat-item:active{background:#191919}
+.chat-item::after{content:"";position:absolute;left:74px;right:0;bottom:0;height:.5px;background:#1a1a1a}
+.chat-avatar{width:46px;height:46px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;position:relative}
+.badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#fa5151;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.chat-body{flex:1;margin-left:12px;overflow:hidden}
+.chat-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.chat-name{font-size:16px;color:#fff;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-time{font-size:12px;color:#555;flex-shrink:0;margin-left:8px}
+.chat-msg{font-size:13px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-toolbar{display:flex;align-items:center;justify-content:space-around;padding:10px 8px 12px;border-bottom:.5px solid #1d1d1d;font-size:13px;color:#bbb}
+.doc-toolbar span{display:flex;align-items:center;gap:5px;cursor:pointer}
+.doc-item{display:flex;align-items:center;padding:13px 16px;position:relative;cursor:pointer}
+.doc-item:active{background:#191919}
+.doc-item::after{content:"";position:absolute;left:56px;right:16px;bottom:0;height:.5px;background:#1d1d1d}
+.doc-icon{width:28px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;margin-right:14px;flex-shrink:0;color:#fff}
+.doc-body{flex:1;overflow:hidden}
+.doc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.doc-title{font-size:16px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px}
+.doc-date{font-size:12px;color:#555;flex-shrink:0}
+.doc-sub{font-size:13px;color:#777}
+.section-caption{padding:10px 16px 6px;font-size:13px;color:#777;background:#121212}
+.contact-sq-icon{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+.folder-icon{width:34px;height:34px;border-radius:7px;background:#23272e;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dept-members{display:none;background:#121212}
+.dept-members.open{display:block}
+.member-row{padding:11px 16px 11px 64px;display:flex;align-items:center;justify-content:space-between;border-top:.5px solid #222;cursor:pointer}
+.contacts-footer{text-align:center;padding:18px 0;font-size:14px;color:#666}
+.wb-banner{margin:4px 12px 10px;border-radius:10px;background:linear-gradient(135deg,#c8d6e5,#8fa8c8);padding:14px 16px 10px;cursor:pointer}
+.wb-banner-school{font-size:14px;font-weight:700;color:#1b4f3e;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.wb-banner-main{font-size:23px;font-weight:800;color:#1a56b8;margin-bottom:4px}
+.wb-banner-sub{font-size:13px;font-weight:600;color:#2c4c7e;margin-bottom:6px}
+.wb-banner-tip{font-size:9px;color:#333;text-align:center;opacity:.75}
+.wb-card{margin:0 12px 12px;background:#191919;border-radius:12px;padding:14px 10px 18px}
+.wb-card-title{padding:0 8px 14px;font-size:14px;color:#888}
+.wb-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 6px}
+.wb-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer}
+.wb-item:active{opacity:.7}
+.wb-app-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff}
+.wb-app-name{font-size:12px;color:#e0e0e0;text-align:center;line-height:1.3;max-width:68px}
+.me-card{margin:6px 12px 12px;background:#191919;border-radius:12px;padding:18px 16px 14px;cursor:pointer}
+.me-card-top{display:flex;justify-content:space-between;align-items:flex-start;min-height:82px}
+.me-corp-row{display:flex;align-items:center;gap:5px;font-size:15px;font-weight:600;color:#aaa;margin-bottom:14px}
+.me-big-name{font-size:22px;font-weight:600;color:#fff}
+.me-avatar-sq{width:56px;height:56px;border-radius:8px;background:radial-gradient(circle at 30% 30%,#2a2a2a,#121212);overflow:hidden;flex-shrink:0}
+.me-avatar-sq img,.avatar-box img{width:100%;height:100%;object-fit:cover}
+.me-card-bottom{margin-top:12px;padding-top:12px;border-top:.5px solid #282828;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:#888}
+.tabbar{flex-shrink:0;height:calc(52px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:#111;border-top:.5px solid #222;display:flex;align-items:center;justify-content:space-around;z-index:20;user-select:none}
+.tab-btn{flex:1;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#888;cursor:pointer;position:relative}
+.tab-btn.active{color:#2f7cf6}
+.tab-btn svg{width:22px;height:22px}
+.tab-label{font-size:10px;font-weight:500}
+.tab-badge{position:absolute;top:4px;left:55%;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#fa5151;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.sub-page{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:480px;background:#000;z-index:100;display:flex;flex-direction:column;transform:translateX(150%);transition:transform .25s ease}
+.sub-page.open{transform:translateX(-50%)}
+.sub-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px}
+.chat-messages{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.msg-row{display:flex;align-items:flex-start;gap:10px}
+.msg-row.mine{flex-direction:row-reverse}
+.msg-bubble{max-width:72%;padding:10px 13px;border-radius:10px;font-size:15px;line-height:1.45;background:#191919;color:#fff;word-break:break-word}
+.msg-row.mine .msg-bubble{background:#2f7cf6}
+.chat-input-bar{flex-shrink:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));background:#141414;border-top:.5px solid #262626;display:flex;align-items:center;gap:8px}
+.chat-input-bar input{flex:1;height:36px;background:#222;border:none;border-radius:8px;padding:0 12px;color:#fff;font-size:15px;outline:none}
+.send-btn{height:36px;padding:0 14px;border-radius:8px;background:#2f7cf6;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer}
+.avatar-box{width:58px;height:58px;border-radius:8px;background:radial-gradient(circle at 30% 30%,#262626,#141414);overflow:hidden}
+.external-prefix{color:#888}.external-suffix{color:#e67e22}
+.shield-icon{width:16px;height:16px;margin-right:4px;flex-shrink:0}
+.double-line{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.bottom-main-text{font-size:16px;color:#fff}.sub-text{font-size:13px;color:#777}
+#avatarInput{display:none}
+.modal-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;padding:20px}
+.modal-box{width:100%;max-width:320px;background:#222;border-radius:14px;overflow:hidden;border:.5px solid #333}
+.modal-title{padding:18px 16px 12px;text-align:center;font-size:16px;font-weight:600;color:#fff}
+.modal-inputs{padding:0 16px 18px;display:flex;flex-direction:column;gap:10px}
+.modal-input{width:100%;padding:10px 12px;background:#141414;border:.5px solid #3a3a3a;border-radius:8px;color:#fff;font-size:16px;outline:none}
+.modal-btns{display:flex;border-top:.5px solid #333}
+.modal-btn{flex:1;padding:13px 0;text-align:center;font-size:16px;background:transparent;border:none;color:#888;cursor:pointer}
+.modal-btn:last-child{border-left:.5px solid #333;color:#3b82f6;font-weight:600}
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(38,38,38,.95);color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:1200;display:none;border:.5px solid #3a3a3a}
+</style>
 </head>
-<body ontouchstart="">
-
+<body>
 <div id="app">
-    <!-- 主界面顶部导航 -->
-    <div class="navbar">
-        <div class="nav-left" id="mainNavLeft">
-            <span class="nav-btn" onclick="showToast('侧边栏筛选')">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="15" y2="12"/><line x1="4" y1="17" x2="18" y2="17"/>
-                </svg>
-            </span>
-        </div>
-        <div class="nav-title" id="mainNavTitle">消息</div>
-        <div class="nav-right" id="mainNavRight">
-            <span class="nav-btn" onclick="showToast('发起群聊 / 扫一扫')">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
-                </svg>
-            </span>
-        </div>
-    </div>
-
-    <!-- 五个主 Tab 页面 -->
-    <div class="tab-views">
-        <!-- ================= 1. 消息页（1:1 还原截图5，已删课程群） ================= -->
-        <div class="tab-page active" id="page-msg">
-            <div class="search-wrap">
-                <div class="search-bar">
-                    <span style="color:#666;font-size:13px;">🔍</span>
-                    <input type="text" id="msgSearchInput" placeholder="搜索" oninput="filterChats(this.value)">
-                </div>
-            </div>
-            <div class="msg-subbar">
-                <div class="msg-subbar-item" onclick="showToast('当前显示：全部消息')"><span>◯ 全部 ▾</span></div>
-                <div class="msg-subbar-item" onclick="showToast('今日暂无待办日程')"><span>📅 日程</span></div>
-                <div class="msg-subbar-item" onclick="showToast('快速发起视频会议')"><span>♾️ 会议</span></div>
-            </div>
-            <div id="chatListContainer">
-                <div class="chat-item" onclick="openChat('我的待办','#4a90e2','🔔','姓名：'+getUserName()+'，时间：2026-11-20 19:47:13 已完成核验')">
-                    <div class="chat-avatar" style="background:#4a90e2;">🔔</div>
-                    <div class="chat-body">
-                        <div class="chat-top">
-                            <div class="chat-name">我的待办</div>
-                            <div class="chat-time">星期五</div>
-                        </div>
-                        <div class="chat-msg" id="todoPreview">姓名：点击编辑，时间：2026-11-20 19:47:13...</div>
-                    </div>
-                </div>
-                <div class="chat-item" onclick="openChat('一周小结','#4fc3f7','📋','查收你的企业微信一周小结',this)">
-                    <div class="chat-avatar" style="background:#4fc3f7;">📋<span class="badge">2</span></div>
-                    <div class="chat-body">
-                        <div class="chat-top">
-                            <div class="chat-name">一周小结</div>
-                            <div class="chat-time">星期五</div>
-                        </div>
-                        <div class="chat-msg">查收你的企业微信一周小结</div>
-                    </div>
-                </div>
-                <div class="chat-item" onclick="openChat('行业资讯','#f5a623','📰','同事们在看《附总榜 | 中锋TOP10榜 (11.18)》',this)">
-                    <div class="chat-avatar" style="background:#f5a623;">📰<span class="badge">1</span></div>
-                    <div class="chat-body">
-                        <div class="chat-top">
-                            <div class="chat-name">行业资讯</div>
-                            <div class="chat-time">星期五</div>
-                        </div>
-                        <div class="chat-msg">同事们在看《附总榜 | 中锋TOP10榜 (11.18)》</div>
-                    </div>
-                </div>
-                <div class="chat-item" onclick="openChat('智慧学工','#4a90e2','📍','活动',this)">
-                    <div class="chat-avatar" style="background:#4a90e2;">📍<span class="badge">5</span></div>
-                    <div class="chat-body">
-                        <div class="chat-top">
-                            <div class="chat-name">智慧学工</div>
-                            <div class="chat-time">11/15</div>
-                        </div>
-                        <div class="chat-msg">活动</div>
-                    </div>
-                </div>
-                <div class="chat-item" onclick="openChat('邮件提醒','#4a90e2','✉️','孙月枝等9171位同事已经在使用邮件，添加...',this)">
-                    <div class="chat-avatar" style="background:#4a90e2;">✉️</div>
-                    <div class="chat-body">
-                        <div class="chat-top">
-                            <div class="chat-name">邮件提醒</div>
-                            <div class="chat-time">11/4</div>
-                        </div>
-                        <div class="chat-msg">孙月枝等9171位同事已经在使用邮件，添加...</div>
-                    </div>
-                </div>
-                <div class="chat-item" onclick="openChat('企业微信团队','#1f2329','💠','5.0.12 版本新功能介绍',this)">
-                    <div class="chat-avatar" style="background:#1f2329;">💠</div>
-                    <div class="chat-body">
-                        <div class="chat-top">
-                            <div class="chat-name">企业微信团队</div>
-                            <div class="chat-time">10/14</div>
-                        </div>
-                        <div class="chat-msg">5.0.12 版本新功能介绍</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= 2. 文档页（1:1 还原截图4） ================= -->
-        <div class="tab-page" id="page-doc">
-            <div class="doc-toolbar">
-                <div class="doc-tool-btn" onclick="showToast('筛选：与我相关')"><span>🗂️ 与我相关 ▾</span></div>
-                <div class="doc-tool-btn" onclick="showToast('新建智能表格')"><span>📊 智能表格</span></div>
-                <div class="doc-tool-btn" onclick="showToast('打开团队知识库')"><span>🔖 知识库</span></div>
-            </div>
-            <div class="doc-item" onclick="showToast('正在打开：无标题表格')">
-                <div class="doc-icon" style="background:#2ecc71;">⊞</div>
-                <div class="doc-body">
-                    <div class="doc-top">
-                        <div class="doc-title">无标题表格</div>
-                        <div class="doc-date">2025/9/23</div>
-                    </div>
-                    <div class="doc-sub">你编辑了表格</div>
-                </div>
-            </div>
-            <div class="doc-item" onclick="showToast('正在打开：理学院2024级第二批新发展团员')">
-                <div class="doc-icon" style="background:#f5a623;">☑</div>
-                <div class="doc-body">
-                    <div class="doc-top">
-                        <div class="doc-title">理学院2024级第二批新发展团员...</div>
-                        <div class="doc-date">2025/3/3</div>
-                    </div>
-                    <div class="doc-sub doc-user-sub">提交了结果</div>
-                </div>
-            </div>
-            <div class="doc-item" onclick="showToast('正在打开：12月17日课堂作业')">
-                <div class="doc-icon" style="background:#f5a623;">☑</div>
-                <div class="doc-body">
-                    <div class="doc-top">
-                        <div class="doc-title">12月17日课堂作业</div>
-                        <div class="doc-date">2024/12/17</div>
-                    </div>
-                    <div class="doc-sub doc-user-sub">提交了结果</div>
-                </div>
-            </div>
-            <div class="doc-item" onclick="showToast('正在打开：10月8日课堂调查')">
-                <div class="doc-icon" style="background:#f5a623;">☑</div>
-                <div class="doc-body">
-                    <div class="doc-top">
-                        <div class="doc-title">10月8日课堂调查</div>
-                        <div class="doc-date">2024/10/8</div>
-                    </div>
-                    <div class="doc-sub doc-user-sub">提交了结果</div>
-                </div>
-            </div>
-            <div class="doc-item" onclick="showToast('正在打开：课堂调查')">
-                <div class="doc-icon" style="background:#f5a623;">☑</div>
-                <div class="doc-body">
-                    <div class="doc-top">
-                        <div class="doc-title">课堂调查</div>
-                        <div class="doc-date">2024/9/24</div>
-                    </div>
-                    <div class="doc-sub">高川提醒你填写收集表</div>
-                </div>
-            </div>
-            <div class="doc-item" onclick="showToast('正在打开：欢迎使用企业微信文档')">
-                <div class="doc-icon" style="background:#2f7cf6;">📄</div>
-                <div class="doc-body">
-                    <div class="doc-top">
-                        <div class="doc-title">欢迎使用企业微信文档</div>
-                        <div class="doc-date">2024/8/1</div>
-                    </div>
-                    <div class="doc-sub">企业微信团队创建</div>
-                </div>
-            </div>
-            <div class="doc-item" onclick="showToast('正在打开：导入本地的工作文档')">
-                <div class="doc-icon" style="background:#2f7cf6;">📄</div>
-                <div class="doc-body">
-                    <div class="doc-top">
-                        <div class="doc-title">导入本地的工作文档</div>
-                        <div class="doc-date">2024/8/1</div>
-                    </div>
-                    <div class="doc-sub">企业微信团队创建</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= 3. 通讯录页（1:1 还原截图3） ================= -->
-        <div class="tab-page" id="page-contacts">
-            <div class="search-wrap">
-                <div class="search-bar">
-                    <span style="color:#666;font-size:13px;">🔍</span>
-                    <input type="text" placeholder="搜索" oninput="showToast('搜索：' + this.value)">
-                </div>
-            </div>
-
-            <div class="section-caption">外部联系人</div>
-            <div class="group" style="margin-bottom:0;">
-                <div class="row" onclick="showToast('外部联系人列表')">
-                    <div class="row-left">
-                        <div class="contact-sq-icon" style="background:#28c76f;">💬</div>
-                        <span>外部联系人</span>
-                    </div>
-                    <div class="row-right"></div>
-                </div>
-                <div class="row" onclick="showToast('支持搜索微信号或扫码添加')">
-                    <div class="row-left">
-                        <div class="contact-sq-icon" style="background:#28c76f;">👤+</div>
-                        <span>添加外部联系人</span>
-                    </div>
-                    <div class="row-right"><span style="font-size:14px;color:#777;">支持加微信</span></div>
-                </div>
-            </div>
-
-            <div class="section-caption" id="contactsCorpCaption">重庆邮电大学</div>
-            <div class="group" style="margin-bottom:0;">
-                <div class="row" onclick="document.getElementById('undergradList').classList.toggle('open')">
-                    <div class="row-left">
-                        <div class="folder-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="#4b8bf4">
-                                <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
-                            </svg>
-                        </div>
-                        <span>本科生</span>
-                    </div>
-                    <div class="row-right"></div>
-                </div>
-                <div class="dept-members" id="undergradList">
-                    <div class="member-row" onclick="openChat('2024级辅导员','#2f7cf6','👤','你好，请问有什么事情？')">
-                        <span style="font-size:15px;">2024级辅导员</span>
-                        <span class="arrow">&gt;</span>
-                    </div>
-                    <div class="member-row" onclick="openChat('班级学习委员','#28c76f','👤','你好，请问有什么事情？')">
-                        <span style="font-size:15px;">班级学习委员</span>
-                        <span class="arrow">&gt;</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="contacts-footer">共32人</div>
-        </div>
-
-        <!-- ================= 4. 工作台页（1:1 还原截图2） ================= -->
-        <div class="tab-page" id="page-workbench">
-            <div class="search-wrap">
-                <div class="search-bar">
-                    <span style="color:#666;font-size:13px;">🔍</span>
-                    <input type="text" placeholder="搜索" oninput="showToast('搜索应用：' + this.value)">
-                </div>
-            </div>
-
-            <div class="wb-banner" onclick="showToast('正在打开一网通办超级移动端')">
-                <div class="wb-banner-school" id="wbBannerSchool">🎓 重庆邮电大学</div>
-                <div class="wb-banner-main">一网通办超级移动端</div>
-                <div class="wb-banner-sub">网上办、掌上办、随地办</div>
-                <div class="wb-banner-tip">本平台为非涉密平台，严禁处理、传输国家秘密</div>
-            </div>
-
-            <div class="wb-card">
-                <div class="wb-card-title">专题推荐</div>
-                <div class="wb-grid">
-                    <div class="wb-item" onclick="showToast('正在进入：报修服务')">
-                        <div class="wb-app-icon" style="background:#f5a623;">🏠</div>
-                        <span class="wb-app-name">报修服务</span>
-                    </div>
-                    <div class="wb-item" onclick="showToast('正在进入：迎新系统')">
-                        <div class="wb-app-icon" style="background:#3b82f6;">👥</div>
-                        <span class="wb-app-name">迎新系统</span>
-                    </div>
-                    <div class="wb-item" onclick="showToast('正在进入：迎新AI助理')">
-                        <div class="wb-app-icon" style="background:#3b82f6;">🤖</div>
-                        <span class="wb-app-name">迎新AI助理</span>
-                    </div>
-                    <div class="wb-item" onclick="showToast('正在进入：网络党校')">
-                        <div class="wb-app-icon" style="background:#e74c3c;">🖥️</div>
-                        <span class="wb-app-name">网络党校</span>
-                    </div>
-
-                    <div class="wb-item" onclick="showToast('正在进入：人脸数据采集')">
-                        <div class="wb-app-icon" style="background:#2ecc71;">😊</div>
-                        <span class="wb-app-name">人脸数据采集</span>
-                    </div>
-                    <div class="wb-item" onclick="showToast('正在进入：一网通办')">
-                        <div class="wb-app-icon" style="background:#3b82f6;">🌐</div>
-                        <span class="wb-app-name">一网通办</span>
-                    </div>
-                    <div class="wb-item" onclick="showToast('正在进入：日程')">
-                        <div class="wb-app-icon" style="background:#3b82f6;">📅</div>
-                        <span class="wb-app-name">日程</span>
-                    </div>
-                    <div class="wb-item" onclick="showToast('正在进入：课程建群')">
-                        <div class="wb-app-icon" style="background:#2ecc71;">💬</div>
-                        <span class="wb-app-name">课程建群</span>
-                    </div>
-
-                    <div class="wb-item" onclick="showToast('正在进入：IT服务')">
-                        <div class="wb-app-icon" style="background:#3b82f6;">🛠️</div>
-                        <span class="wb-app-name">IT服务</span>
-                    </div>
-                    <div class="wb-item" onclick="showToast('正在进入：智能填表')">
-                        <div class="wb-app-icon" style="background:#3b82f6;">📋</div>
-                        <span class="wb-app-name">智能填表</span>
-                    </div>
-                    <div class="wb-item" onclick="showToast('正在进入：数字签章')">
-                        <div class="wb-app-icon" style="background:#2ecc71;">🔏</div>
-                        <span class="wb-app-name">数字签章</span>
-                    </div>
-                    <div class="wb-item" onclick="showToast('正在进入：学生请假')">
-                        <div class="wb-app-icon" style="background:#3b82f6;">🧑‍🎓</div>
-                        <span class="wb-app-name">学生请假</span>
-                    </div>
-
-                    <div class="wb-item" onclick="showToast('正在进入：校史馆参观预约')">
-                        <div class="wb-app-icon" style="background:#2ecc71;">🏛️</div>
-                        <span class="wb-app-name">校史馆参观预约</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= 5. “我” 主界面（1:1 还原截图1） ================= -->
-        <div class="tab-page" id="page-me">
-            <div class="me-card" onclick="openSubPage('profileSubPage')">
-                <div class="me-card-top">
-                    <div class="me-card-left">
-                        <div class="me-corp-row">
-                            <span id="meCardCompany">重庆邮电大学</span>
-                            <svg class="shield-icon" viewBox="0 0 24 24" fill="none" stroke="#28c76f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                                <polyline points="9 12 11 14 15 10"></polyline>
-                            </svg>
-                        </div>
-                        <div class="me-big-name" id="meCardName">点击编辑</div>
-                    </div>
-                    <div class="me-avatar-sq" id="meCardAvatar"></div>
-                </div>
-                <div class="me-card-bottom">
-                    <span>对外名片</span>
-                    <span style="font-size:16px;color:#777;">⊞</span>
-                </div>
-            </div>
-
-            <div class="group">
-                <div class="row" onclick="showToast('我的收藏为空')">
-                    <div class="row-left">
-                        <div class="me-menu-icon" style="color:#f5a623;">📦</div>
-                        <span>收藏</span>
-                    </div>
-                </div>
-                <div class="row" onclick="showToast('暂无红包记录')">
-                    <div class="row-left">
-                        <div class="me-menu-icon" style="color:#fa5151;">🧧</div>
-                        <span>红包</span>
-                    </div>
-                </div>
-                <div class="row" onclick="showToast('今日通勤打卡正常')">
-                    <div class="row-left">
-                        <div class="me-menu-icon" style="color:#f5a623;">📍</div>
-                        <span>通勤</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="group">
-                <div class="row" onclick="showToast('帮助与反馈中心')">
-                    <div class="row-left">
-                        <div class="me-menu-icon" style="color:#2f7cf6;">💬</div>
-                        <span>帮助</span>
-                    </div>
-                </div>
-                <div class="row" onclick="openSubPage('profileSubPage')">
-                    <div class="row-left">
-                        <div class="me-menu-icon" style="color:#5c8df6;">⚙️</div>
-                        <span>设置</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 底部 5 栏 TabBar -->
-    <div class="tabbar">
-        <div class="tab-btn active" id="tab-msg" onclick="switchTab('msg', '消息')">
-            <span class="tab-badge" id="totalUnreadBadge">8</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-            </svg>
-            <span class="tab-label">消息</span>
-        </div>
-        <div class="tab-btn" id="tab-doc" onclick="switchTab('doc', '文档')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="9" y1="14" x2="15" y2="14"/>
-            </svg>
-            <span class="tab-label">文档</span>
-        </div>
-        <div class="tab-btn" id="tab-contacts" onclick="switchTab('contacts', '重庆邮电大学')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <rect x="9" y="3" width="6" height="5" rx="1"/>
-                <rect x="3" y="16" width="5" height="5" rx="1"/>
-                <rect x="10" y="16" width="4" height="5" rx="1"/>
-                <rect x="16" y="16" width="5" height="5" rx="1"/>
-                <path d="M12 8v4M5.5 16v-4h13v4"/>
-            </svg>
-            <span class="tab-label">通讯录</span>
-        </div>
-        <div class="tab-btn" id="tab-workbench" onclick="switchTab('workbench', '工作台')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-            </svg>
-            <span class="tab-label">工作台</span>
-        </div>
-        <div class="tab-btn" id="tab-me" onclick="switchTab('me', '我')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-            </svg>
-            <span class="tab-label">我</span>
-        </div>
-    </div>
+<div class="navbar">
+<div class="nav-left" id="mainNavLeft"><span class="nav-btn" onclick="showToast('侧边栏筛选')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="15" y2="12"/><line x1="4" y1="17" x2="18" y2="17"/></svg></span></div>
+<div class="nav-title" id="mainNavTitle">消息</div>
+<div class="nav-right" id="mainNavRight"><span class="nav-btn" onclick="showToast('发起群聊')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span></div>
 </div>
 
-<!-- ================= 二级页面 1：完整“个人信息”详情页（保留纯黑间隙与编辑） ================= -->
+<div class="tab-views">
+<!-- 1. 消息页 -->
+<div class="tab-page active" id="page-msg">
+<div class="search-wrap"><div class="search-bar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg><input id="msgSearchInput" placeholder="搜索" oninput="filterChats(this.value)"></div></div>
+<div class="msg-subbar">
+<span onclick="showToast('全部消息')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/></svg>全部 ▾</span>
+<span onclick="showToast('日程')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>日程</span>
+<span onclick="showToast('会议')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/></svg>会议</span>
+</div>
+<div id="chatListContainer">
+<div class="chat-item" onclick="openChat('我的待办','#4a90e2','🔔','姓名：'+getUserName()+'，时间：2026-11-20 19:47:13 已完成核验')"><div class="chat-avatar" style="background:#4a90e2"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div><div class="chat-body"><div class="chat-top"><div class="chat-name">我的待办</div><div class="chat-time">星期五</div></div><div class="chat-msg" id="todoPreview">姓名：点击编辑，时间：2026-11-20 19:47:13...</div></div></div>
+<div class="chat-item" onclick="openChat('一周小结','#4fc3f7','📋','查收你的企业微信一周小结',this)"><div class="chat-avatar" style="background:#4fc3f7"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg><span class="badge">2</span></div><div class="chat-body"><div class="chat-top"><div class="chat-name">一周小结</div><div class="chat-time">星期五</div></div><div class="chat-msg">查收你的企业微信一周小结</div></div></div>
+<div class="chat-item" onclick="openChat('行业资讯','#f5a623','📰','同事们在看《附总榜 | 中锋TOP10榜 (11.18)》',this)"><div class="chat-avatar" style="background:#f5a623"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg><span class="badge">1</span></div><div class="chat-body"><div class="chat-top"><div class="chat-name">行业资讯</div><div class="chat-time">星期五</div></div><div class="chat-msg">同事们在看《附总榜 | 中锋TOP10榜 (11.18)》</div></div></div>
+<div class="chat-item" onclick="openChat('智慧学工','#4a90e2','📍','活动',this)"><div class="chat-avatar" style="background:#4a90e2"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg><span class="badge">5</span></div><div class="chat-body"><div class="chat-top"><div class="chat-name">智慧学工</div><div class="chat-time">11/15</div></div><div class="chat-msg">活动</div></div></div>
+<div class="chat-item" onclick="openChat('邮件提醒','#4a90e2','✉️','孙月枝等9171位同事已经在使用邮件，添加...',this)"><div class="chat-avatar" style="background:#4a90e2"><svg width="23" height="23" viewBox="0 0 24 24" fill="#fff"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></div><div class="chat-body"><div class="chat-top"><div class="chat-name">邮件提醒</div><div class="chat-time">11/4</div></div><div class="chat-msg">孙月枝等9171位同事已经在使用邮件，添加...</div></div></div>
+<div class="chat-item" onclick="openChat('企业微信团队','#191d24','💠','5.0.12 版本新功能介绍',this)"><div class="chat-avatar" style="background:#191d24"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="4" r="1.5" fill="#2ecc71" stroke="none"/><circle cx="19" cy="15" r="1.5" fill="#f5a623" stroke="none"/><circle cx="5" cy="15" r="1.5" fill="#3b82f6" stroke="none"/></svg></div><div class="chat-body"><div class="chat-top"><div class="chat-name">企业微信团队</div><div class="chat-time">10/14</div></div><div class="chat-msg">5.0.12 版本新功能介绍</div></div></div>
+</div>
+</div>
+
+<!-- 2. 文档页 -->
+<div class="tab-page" id="page-doc">
+<div class="doc-toolbar">
+<span onclick="showToast('与我相关')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 12l3-3 3 3 4-4"/></svg>与我相关 ▾</span>
+<span onclick="showToast('智能表格')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="21"/></svg>智能表格</span>
+<span onclick="showToast('知识库')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>知识库</span>
+</div>
+<div class="doc-item" onclick="showToast('无标题表格')"><div class="doc-icon" style="background:#2ecc71"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="10" x2="12" y2="21"/></svg></div><div class="doc-body"><div class="doc-top"><div class="doc-title">无标题表格</div><div class="doc-date">2025/9/23</div></div><div class="doc-sub">你编辑了表格</div></div></div>
+<div class="doc-item" onclick="showToast('理学院2024级第二批新发展团员')"><div class="doc-icon" style="background:#f5a623"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><div class="doc-body"><div class="doc-top"><div class="doc-title">理学院2024级第二批新发展团员...</div><div class="doc-date">2025/3/3</div></div><div class="doc-sub doc-user-sub">提交了结果</div></div></div>
+<div class="doc-item" onclick="showToast('12月17日课堂作业')"><div class="doc-icon" style="background:#f5a623"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><div class="doc-body"><div class="doc-top"><div class="doc-title">12月17日课堂作业</div><div class="doc-date">2024/12/17</div></div><div class="doc-sub doc-user-sub">提交了结果</div></div></div>
+<div class="doc-item" onclick="showToast('10月8日课堂调查')"><div class="doc-icon" style="background:#f5a623"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><div class="doc-body"><div class="doc-top"><div class="doc-title">10月8日课堂调查</div><div class="doc-date">2024/10/8</div></div><div class="doc-sub doc-user-sub">提交了结果</div></div></div>
+<div class="doc-item" onclick="showToast('课堂调查')"><div class="doc-icon" style="background:#f5a623"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div><div class="doc-body"><div class="doc-top"><div class="doc-title">课堂调查</div><div class="doc-date">2024/9/24</div></div><div class="doc-sub">高川提醒你填写收集表</div></div></div>
+<div class="doc-item" onclick="showToast('欢迎使用企业微信文档')"><div class="doc-icon" style="background:#2f7cf6"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="doc-body"><div class="doc-top"><div class="doc-title">欢迎使用企业微信文档</div><div class="doc-date">2024/8/1</div></div><div class="doc-sub">企业微信团队创建</div></div></div>
+<div class="doc-item" onclick="showToast('导入本地的工作文档')"><div class="doc-icon" style="background:#2f7cf6"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="doc-body"><div class="doc-top"><div class="doc-title">导入本地的工作文档</div><div class="doc-date">2024/8/1</div></div><div class="doc-sub">企业微信团队创建</div></div></div>
+</div>
+
+<!-- 3. 通讯录页 -->
+<div class="tab-page" id="page-contacts">
+<div class="search-wrap"><div class="search-bar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg><input placeholder="搜索"></div></div>
+<div class="section-caption">外部联系人</div>
+<div class="group" style="margin-bottom:0">
+<div class="row" onclick="showToast('外部联系人')"><div class="row-left"><div class="contact-sq-icon" style="background:#28c76f"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M8.5 13.5c-3.04 0-5.5-2.01-5.5-4.5S5.46 4.5 8.5 4.5s5.5 2.01 5.5 4.5-2.46 4.5-5.5 4.5zm7.5 1.5c0-1.85-1.72-3.39-4.01-3.78.32-.69.51-1.44.51-2.22 0-.34-.04-.67-.1-.99 2.66.22 4.6 1.98 4.6 4.19 0 1.07-.5 2.04-1.31 2.76l.31 1.34-1.39-.7c-.45.13-.93.2-1.43.2-1.69 0-3.17-.77-3.95-1.93.55.08 1.12.13 1.71.13 2.79 0 5.06-1.79 5.06-4z"/></svg></div><span>外部联系人</span></div></div>
+<div class="row" onclick="showToast('添加外部联系人')"><div class="row-left"><div class="contact-sq-icon" style="background:#28c76f"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div><span>添加外部联系人</span></div><div class="row-right"><span style="font-size:14px;color:#777">支持加微信</span></div></div>
+</div>
+<div class="section-caption" id="contactsCorpCaption">重庆邮电大学</div>
+<div class="group" style="margin-bottom:0">
+<div class="row" onclick="document.getElementById('undergradList').classList.toggle('open')"><div class="row-left"><div class="folder-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#4b8bf4"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg></div><span>本科生</span></div></div>
+<div class="dept-members" id="undergradList">
+<div class="member-row" onclick="openChat('2024级辅导员','#2f7cf6','👤','你好，请问有什么事情？')"><span>2024级辅导员</span><span class="arrow">&gt;</span></div>
+<div class="member-row" onclick="openChat('班级学习委员','#28c76f','👤','你好，请问有什么事情？')"><span>班级学习委员</span><span class="arrow">&gt;</span></div>
+</div>
+</div>
+<div class="contacts-footer">共32人</div>
+</div>
+
+<!-- 4. 工作台页（全套矢量 SVG 图标） -->
+<div class="tab-page" id="page-workbench">
+<div class="search-wrap"><div class="search-bar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg><input placeholder="搜索"></div></div>
+<div class="wb-banner" onclick="showToast('一网通办超级移动端')">
+<div class="wb-banner-school" id="wbBannerSchool"><svg width="16" height="16" viewBox="0 0 24 24" fill="#1b4f3e"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg><span>重庆邮电大学</span></div>
+<div class="wb-banner-main">一网通办超级移动端</div>
+<div class="wb-banner-sub">网上办、掌上办、随地办</div>
+<div class="wb-banner-tip">本平台为非涉密平台，严禁处理、传输国家秘密</div>
+</div>
+<div class="wb-card">
+<div class="wb-card-title">专题推荐</div>
+<div class="wb-grid">
+<div class="wb-item" onclick="showToast('报修服务')"><div class="wb-app-icon" style="background:#f5a623"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 15l4-4"/></svg></div><span class="wb-app-name">报修服务</span></div>
+<div class="wb-item" onclick="showToast('迎新系统')"><div class="wb-app-icon" style="background:#3b82f6"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div><span class="wb-app-name">迎新系统</span></div>
+<div class="wb-item" onclick="showToast('迎新AI助理')"><div class="wb-app-icon" style="background:#3b82f6"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="4" y="7" width="16" height="12" rx="3"/><line x1="12" y1="3" x2="12" y2="7"/><circle cx="9" cy="12" r="1" fill="#fff"/><circle cx="15" cy="12" r="1" fill="#fff"/><line x1="9" y1="16" x2="15" y2="16"/></svg></div><span class="wb-app-name">迎新AI助理</span></div>
+<div class="wb-item" onclick="showToast('网络党校')"><div class="wb-app-icon" style="background:#e74c3c"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg></div><span class="wb-app-name">网络党校</span></div>
+
+<div class="wb-item" onclick="showToast('人脸数据采集')"><div class="wb-app-icon" style="background:#2ecc71"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="9" cy="10" r="1" fill="#fff"/><circle cx="15" cy="10" r="1" fill="#fff"/><path d="M9 15c1.5 1.5 4.5 1.5 6 0"/></svg></div><span class="wb-app-name">人脸数据采集</span></div>
+<div class="wb-item" onclick="showToast('一网通办')"><div class="wb-app-icon" style="background:#3b82f6"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="3" y="4" width="18" height="13" rx="2"/><circle cx="12" cy="10.5" r="3.5"/><line x1="8" y1="20" x2="16" y2="20"/></svg></div><span class="wb-app-name">一网通办</span></div>
+<div class="wb-item" onclick="showToast('日程')"><div class="wb-app-icon" style="background:#3b82f6"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><circle cx="9" cy="14" r="1" fill="#fff"/><circle cx="12" cy="14" r="1" fill="#fff"/><circle cx="15" cy="14" r="1" fill="#fff"/></svg></div><span class="wb-app-name">日程</span></div>
+<div class="wb-item" onclick="showToast('课程建群')"><div class="wb-app-icon" style="background:#2ecc71"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="13" y2="13"/></svg></div><span class="wb-app-name">课程建群</span></div>
+
+<div class="wb-item" onclick="showToast('IT服务')"><div class="wb-app-icon" style="background:#3b82f6"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></div><span class="wb-app-name">IT服务</span></div>
+<div class="wb-item" onclick="showToast('智能填表')"><div class="wb-app-icon" style="background:#3b82f6"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="5" y="4" width="14" height="16" rx="2"/><polyline points="9 11 11 13 15 9"/><line x1="9" y1="16" x2="15" y2="16"/></svg></div><span class="wb-app-name">智能填表</span></div>
+<div class="wb-item" onclick="showToast('数字签章')"><div class="wb-app-icon" style="background:#2ecc71"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M12 4a3 3 0 0 1 2.2 5.04L13.5 13H17a2 2 0 0 1 2 2v2H5v-2a2 2 0 0 1 2-2h3.5l-.7-3.96A3 3 0 0 1 12 4zm-7 15h14v1.5H5V19z"/></svg></div><span class="wb-app-name">数字签章</span></div>
+<div class="wb-item" onclick="showToast('学生请假')"><div class="wb-app-icon" style="background:#3b82f6"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="10" cy="8" r="3.5"/><path d="M3 19c0-3.3 3.1-6 7-6"/><circle cx="17" cy="15" r="3.5"/><polyline points="17 13.5 17 15 18 16"/></svg></div><span class="wb-app-name">学生请假</span></div>
+
+<div class="wb-item" onclick="showToast('校史馆参观预约')"><div class="wb-app-icon" style="background:#2ecc71"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="5" y="4" width="14" height="13" rx="1.5"/><path d="M9 10h6M9 13h6M7 17v3M17 17v3"/></svg></div><span class="wb-app-name">校史馆参观预约</span></div>
+</div>
+</div>
+</div>
+
+<!-- 5. 我（全套矢量 SVG 图标） -->
+<div class="tab-page" id="page-me">
+<div class="me-card" onclick="openSubPage('profileSubPage')">
+<div class="me-card-top">
+<div>
+<div class="me-corp-row"><span id="meCardCompany">重庆邮电大学</span><svg class="shield-icon" viewBox="0 0 24 24" fill="none" stroke="#28c76f" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div>
+<div class="me-big-name" id="meCardName">点击编辑</div>
+</div>
+<div class="me-avatar-sq" id="meCardAvatar"></div>
+</div>
+<div class="me-card-bottom"><span>对外名片</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg></div>
+</div>
+<div class="group">
+<div class="row" onclick="showToast('收藏')"><div class="row-left"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span>收藏</span></div></div>
+<div class="row" onclick="showToast('红包')"><div class="row-left"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fa5151"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M4 8c4 3 12 3 16 0" fill="none" stroke="#f5a623" stroke-width="1.6"/></svg><span>红包</span></div></div>
+<div class="row" onclick="showToast('通勤')"><div class="row-left"><svg width="22" height="22" viewBox="0 0 24 24" fill="#f5a623"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm1 8h-3V6h1.5v2.5H13V10z"/></svg><span>通勤</span></div></div>
+</div>
+<div class="group">
+<div class="row" onclick="showToast('帮助')"><div class="row-left"><svg width="22" height="22" viewBox="0 0 24 24" fill="#2f7cf6"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 11c-1.8 0-3.2-1-3.6-2.3l1.4-.5c.3.8 1.2 1.3 2.2 1.3s1.9-.5 2.2-1.3l1.4.5C15.2 12 13.8 13 12 13z"/></svg><span>帮助</span></div></div>
+<div class="row" onclick="openSubPage('profileSubPage')"><div class="row-left"><svg width="22" height="22" viewBox="0 0 24 24" fill="#5c8df6"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg><span>设置</span></div></div>
+</div>
+</div>
+</div>
+
+<!-- 底部 5 栏导航 -->
+<div class="tabbar">
+<div class="tab-btn active" id="tab-msg" onclick="switchTab('msg','消息')"><span class="tab-badge" id="totalUnreadBadge">8</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg><span class="tab-label">消息</span></div>
+<div class="tab-btn" id="tab-doc" onclick="switchTab('doc','文档')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="14" x2="15" y2="14"/></svg><span class="tab-label">文档</span></div>
+<div class="tab-btn" id="tab-contacts" onclick="switchTab('contacts','重庆邮电大学')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="10" y="16" width="4" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/><path d="M12 8v4M5.5 16v-4h13v4"/></svg><span class="tab-label">通讯录</span></div>
+<div class="tab-btn" id="tab-workbench" onclick="switchTab('workbench','工作台')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg><span class="tab-label">工作台</span></div>
+<div class="tab-btn" id="tab-me" onclick="switchTab('me','我')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tab-label">我</span></div>
+</div>
+</div>
+
+<!-- 二级页面：个人信息 -->
 <div class="sub-page" id="profileSubPage">
-    <div class="navbar">
-        <div class="nav-left">
-            <span class="nav-btn" style="font-size:28px;font-weight:300;" onclick="closeSubPage('profileSubPage')">‹</span>
-        </div>
-        <div class="nav-title">个人信息</div>
-        <div class="nav-right"></div>
-    </div>
-
-    <div class="sub-scroll">
-        <!-- 第一组：头像、姓名、别名、性别 -->
-        <div class="group plain-group" style="margin-top: 6px;">
-            <div class="row" style="padding: 12px 16px;" onclick="document.getElementById('avatarInput').click()">
-                <div class="row-left">头像</div>
-                <div class="row-right">
-                    <div class="avatar-box" id="avatarBox"></div>
-                    <span class="arrow">&gt;</span>
-                </div>
-                <input type="file" id="avatarInput" accept="image/*" onchange="changeAvatar(event)">
-            </div>
-            <div class="row" onclick="openSingleModal('userName', '修改姓名', false)">
-                <div class="row-left">姓名</div>
-                <div class="row-right">
-                    <span id="val-userName">点击编辑</span>
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-            <div class="row" onclick="openSingleModal('userAlias', '修改别名', true)">
-                <div class="row-left">别名</div>
-                <div class="row-right">
-                    <span id="val-userAlias">无</span>
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-            <div class="row" onclick="toggleGender()">
-                <div class="row-left">性别</div>
-                <div class="row-right">
-                    <span id="val-userGender">男</span>
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 第二组：对外信息显示 -->
-        <div class="group plain-group">
-            <div class="row" onclick="openExternalModal()">
-                <div class="row-left">对外信息显示</div>
-                <div class="row-right">
-                    <span class="external-prefix" id="val-externalPrefix">点击编辑</span><span class="external-suffix" id="val-externalSuffix">@重庆邮电大学</span>
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 第三组：工作签名、所属企业、发票抬头 -->
-        <div class="group plain-group">
-            <div class="row" onclick="openSingleModal('workSignature', '工作签名', false)">
-                <div class="row-left">工作签名</div>
-                <div class="row-right">
-                    <span id="val-workSignature"></span>
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-            <div class="row" onclick="openSingleModal('company', '所属企业', false)">
-                <div class="row-left">所属企业</div>
-                <div class="row-right">
-                    <svg class="shield-icon" viewBox="0 0 24 24" fill="none" stroke="#28c76f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                        <polyline points="9 12 11 14 15 10"></polyline>
-                    </svg>
-                    <span id="val-company">重庆邮电大学</span>
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-            <div class="row" onclick="openSingleModal('invoiceTitle', '发票抬头', true)">
-                <div class="row-left">发票抬头</div>
-                <div class="row-right">
-                    <span id="val-invoiceTitle">无</span>
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 第四组：邮箱、地址 -->
-        <div class="group plain-group">
-            <div class="row" onclick="openSingleModal('email', '邮箱', true)">
-                <div class="row-left">邮箱</div>
-                <div class="row-right">
-                    <span id="val-email">无</span>
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-            <div class="row" onclick="openSingleModal('address', '地址', true)">
-                <div class="row-left">地址</div>
-                <div class="row-right">
-                    <span id="val-address">无</span>
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 第五组：底部双行信息（独立分组，保留上方纯黑间隙） -->
-        <div class="group plain-group">
-            <div class="row" onclick="openBottomModal()">
-                <div class="row-left double-line">
-                    <span class="bottom-main-text" id="val-bottomId">点击编辑</span>
-                    <span class="sub-text">
-                        <span id="val-degree">本科生</span>/<span id="val-college">电子科学与工程学院</span>/<span id="val-grade">2024</span>
-                    </span>
-                </div>
-                <div class="row-right">
-                    <span class="arrow">&gt;</span>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="navbar">
+<div class="nav-left"><span class="nav-btn" style="font-size:28px;font-weight:300" onclick="closeSubPage('profileSubPage')">‹</span></div>
+<div class="nav-title">个人信息</div>
+<div class="nav-right"></div>
+</div>
+<div class="sub-scroll">
+<div class="group plain-group" style="margin-top:6px">
+<div class="row" style="padding:12px 16px" onclick="document.getElementById('avatarInput').click()"><div class="row-left">头像</div><div class="row-right"><div class="avatar-box" id="avatarBox"></div><span class="arrow">&gt;</span></div><input type="file" id="avatarInput" accept="image/*" onchange="changeAvatar(event)"></div>
+<div class="row" onclick="openSingleModal('userName','修改姓名',false)"><div class="row-left">姓名</div><div class="row-right"><span id="val-userName">点击编辑</span><span class="arrow">&gt;</span></div></div>
+<div class="row" onclick="openSingleModal('userAlias','修改别名',true)"><div class="row-left">别名</div><div class="row-right"><span id="val-userAlias">无</span><span class="arrow">&gt;</span></div></div>
+<div class="row" onclick="toggleGender()"><div class="row-left">性别</div><div class="row-right"><span id="val-userGender">男</span><span class="arrow">&gt;</span></div></div>
+</div>
+<div class="group plain-group">
+<div class="row" onclick="openExternalModal()"><div class="row-left">对外信息显示</div><div class="row-right"><span class="external-prefix" id="val-externalPrefix">点击编辑</span><span class="external-suffix" id="val-externalSuffix">@重庆邮电大学</span><span class="arrow">&gt;</span></div></div>
+</div>
+<div class="group plain-group">
+<div class="row" onclick="openSingleModal('workSignature','工作签名',false)"><div class="row-left">工作签名</div><div class="row-right"><span id="val-workSignature"></span><span class="arrow">&gt;</span></div></div>
+<div class="row" onclick="openSingleModal('company','所属企业',false)"><div class="row-left">所属企业</div><div class="row-right"><svg class="shield-icon" viewBox="0 0 24 24" fill="none" stroke="#28c76f" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span id="val-company">重庆邮电大学</span><span class="arrow">&gt;</span></div></div>
+<div class="row" onclick="openSingleModal('invoiceTitle','发票抬头',true)"><div class="row-left">发票抬头</div><div class="row-right"><span id="val-invoiceTitle">无</span><span class="arrow">&gt;</span></div></div>
+</div>
+<div class="group plain-group">
+<div class="row" onclick="openSingleModal('email','邮箱',true)"><div class="row-left">邮箱</div><div class="row-right"><span id="val-email">无</span><span class="arrow">&gt;</span></div></div>
+<div class="row" onclick="openSingleModal('address','地址',true)"><div class="row-left">地址</div><div class="row-right"><span id="val-address">无</span><span class="arrow">&gt;</span></div></div>
+</div>
+<div class="group plain-group">
+<div class="row" onclick="openBottomModal()"><div class="row-left double-line"><span class="bottom-main-text" id="val-bottomId">点击编辑</span><span class="sub-text"><span id="val-degree">本科生</span>/<span id="val-college">电子科学与工程学院</span>/<span id="val-grade">2024</span></span></div><div class="row-right"><span class="arrow">&gt;</span></div></div>
+</div>
+</div>
 </div>
 
-<!-- ================= 二级页面 2：聊天对话窗口 ================= -->
+<!-- 二级页面：聊天窗口 -->
 <div class="sub-page" id="chatDetailSubPage">
-    <div class="navbar">
-        <div class="nav-left">
-            <span class="nav-btn" style="font-size:28px;font-weight:300;" onclick="closeSubPage('chatDetailSubPage')">‹</span>
-        </div>
-        <div class="nav-title" id="chatDetailTitle">聊天</div>
-        <div class="nav-right"></div>
-    </div>
-    <div class="chat-messages" id="chatMessagesBox"></div>
-    <div class="chat-input-bar">
-        <input type="text" id="chatSendInput" placeholder="发送消息..." onkeypress="if(event.key==='Enter') sendChatMessage()">
-        <button type="button" class="send-btn" onclick="sendChatMessage()">发送</button>
-    </div>
+<div class="navbar">
+<div class="nav-left"><span class="nav-btn" style="font-size:28px;font-weight:300" onclick="closeSubPage('chatDetailSubPage')">‹</span></div>
+<div class="nav-title" id="chatDetailTitle">聊天</div>
+<div class="nav-right"></div>
+</div>
+<div class="chat-messages" id="chatMessagesBox"></div>
+<div class="chat-input-bar">
+<input id="chatSendInput" placeholder="发送消息..." onkeypress="if(event.key==='Enter')sendChatMessage()">
+<button type="button" class="send-btn" onclick="sendChatMessage()">发送</button>
+</div>
 </div>
 
-<!-- 自定义暗黑编辑弹窗 -->
-<div class="modal-mask" id="editModal" onclick="if(event.target===this) closeModal()">
-    <div class="modal-box">
-        <div class="modal-title" id="modalTitle">编辑</div>
-        <div class="modal-inputs" id="modalInputs"></div>
-        <div class="modal-btns">
-            <button type="button" class="modal-btn" onclick="closeModal()">取消</button>
-            <button type="button" class="modal-btn" id="modalConfirmBtn">确定</button>
-        </div>
-    </div>
+<!-- 自定义弹窗 -->
+<div class="modal-mask" id="editModal" onclick="if(event.target===this)closeModal()">
+<div class="modal-box">
+<div class="modal-title" id="modalTitle">编辑</div>
+<div class="modal-inputs" id="modalInputs"></div>
+<div class="modal-btns">
+<button type="button" class="modal-btn" onclick="closeModal()">取消</button>
+<button type="button" class="modal-btn" id="modalConfirmBtn">确定</button>
 </div>
-
+</div>
+</div>
 <div class="toast" id="toastBox"></div>
 
 <script>
-    const keys = [
-        'userName', 'userAlias', 'userGender',
-        'externalPrefix', 'externalSuffix',
-        'workSignature', 'company', 'invoiceTitle',
-        'email', 'address', 'bottomId',
-        'degree', 'college', 'grade'
-    ];
-
-    function getUserName() {
-        const v = document.getElementById('val-userName').innerText;
-        return (v && v !== '点击编辑') ? v : '我';
-    }
-
-    window.onload = function() {
-        keys.forEach(function(k) {
-            const s = localStorage.getItem(k);
-            if (s !== null) {
-                const e = document.getElementById('val-' + k);
-                if (e) e.innerText = s;
-            }
-        });
-        const av = localStorage.getItem('userAvatar');
-        if (av) {
-            document.getElementById('avatarBox').innerHTML = '<img src="' + av + '">';
-        }
-        syncViews();
-    };
-
-    function syncViews() {
-        const n = document.getElementById('val-userName').innerText;
-        const c = document.getElementById('val-company').innerText;
-        const av = localStorage.getItem('userAvatar');
-        const disp = (n && n !== '点击编辑') ? n : '我';
-
-        document.getElementById('meCardName').innerText = n;
-        document.getElementById('meCardCompany').innerText = c;
-        document.getElementById('contactsCorpCaption').innerText = c;
-        document.getElementById('wbBannerSchool').innerText = '🎓 ' + c;
-        document.getElementById('todoPreview').innerText = '姓名：' + disp + '，时间：2026-11-20 19:47:13...';
-        document.querySelectorAll('.doc-user-sub').forEach(function(el) {
-            el.innerText = disp + '提交了结果';
-        });
-        if (av) {
-            document.getElementById('meCardAvatar').innerHTML = '<img src="' + av + '">';
-        }
-    }
-
-    function switchTab(k, t) {
-        document.querySelectorAll('.tab-page').forEach(function(p) { p.classList.remove('active'); });
-        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-        document.getElementById('page-' + k).classList.add('active');
-        document.getElementById('tab-' + k).classList.add('active');
-
-        const c = document.getElementById('val-company').innerText;
-        document.getElementById('mainNavTitle').innerText = (k === 'contacts') ? c : t;
-
-        const l = document.getElementById('mainNavLeft');
-        const r = document.getElementById('mainNavRight');
-        if (k === 'msg') {
-            l.innerHTML = '<span class="nav-btn" onclick="showToast(\'侧边栏筛选\')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="15" y2="12"/><line x1="4" y1="17" x2="18" y2="17"/></svg></span>';
-            r.innerHTML = '<span class="nav-btn" onclick="showToast(\'发起群聊 / 扫一扫\')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>';
-        } else if (k === 'doc') {
-            l.innerHTML = '';
-            r.innerHTML = '<span class="nav-btn" style="font-size:26px;font-weight:300;" onclick="showToast(\'新建文档 / 表格\')">+</span>';
-        } else if (k === 'workbench') {
-            l.innerHTML = '';
-            r.innerHTML = '<span class="nav-btn" onclick="showToast(\'管理工作台应用\')">⚙️</span>';
-        } else {
-            l.innerHTML = '';
-            r.innerHTML = '';
-        }
-        if (k === 'me') syncViews();
-    }
-
-    function filterChats(kw) {
-        const q = (kw || '').trim().toLowerCase();
-        document.querySelectorAll('#chatListContainer .chat-item').forEach(function(el) {
-            el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
-        });
-    }
-
-    function openChat(name, col, icon, firstMsg, el) {
-        if (el) {
-            const b = el.querySelector('.badge');
-            if (b) b.remove();
-        }
-        document.getElementById('chatDetailTitle').innerText = name;
-        document.getElementById('chatMessagesBox').innerHTML =
-            '<div class="msg-row">' +
-                '<div class="chat-avatar" style="width:36px;height:36px;font-size:15px;background:' + col + ';">' + icon + '</div>' +
-                '<div class="msg-bubble">' + firstMsg + '</div>' +
-            '</div>';
-        openSubPage('chatDetailSubPage');
-    }
-
-    function sendChatMessage() {
-        const inp = document.getElementById('chatSendInput');
-        const t = inp.value.trim();
-        if (!t) return;
-        const box = document.getElementById('chatMessagesBox');
-        box.innerHTML +=
-            '<div class="msg-row mine">' +
-                '<div class="chat-avatar" style="width:36px;height:36px;font-size:15px;background:#2f7cf6;">我</div>' +
-                '<div class="msg-bubble">' + t + '</div>' +
-            '</div>';
-        inp.value = '';
-        box.scrollTop = box.scrollHeight;
-    }
-
-    function openSubPage(id) { document.getElementById(id).class
+const keys=['userName','userAlias','userGender','externalPrefix','externalSuffix','workSignature','company','invoiceTitle','email','address','bottomId','degree','college','grade'];
+function getUserName(){const v=document.getElementById('val-userName').innerText;return(v&&v!=='点击编辑')?v:'我'}
+window.onload=function(){
+keys.forEach(function(k){const s=localStorage.getItem(k);if(s!==null){const e=document.getElementById('val-'+k);if(e)e.innerText=s}});
+const av=localStorage.getItem('userAvatar');if(av)document.getElementById('avatarBox').innerHTML='<img src="'+av+'">';
+syncViews();
+};
+function syncViews(){
+const n=document.getElementById('val-userName').innerText,c=document.getElementById('val-company').innerText,av=localStorage.getItem('userAvatar'),disp=(n&&n!=='点击编辑')?n:'我';
+document.getElementById('meCardName').innerText=n;
+document.getElementById('meCardCompany').innerText=c;
+document.getElementById('contactsCorpCaption').innerText=c;
+document.getElementById('wbBannerSchool').querySelector('span').innerText=c;
+document.getElementById('todoPreview').innerText='姓名：'+disp+'，时间：2026-11-20 19:47:13...';
+document.querySelectorAll('.doc-user-sub').forEach(function(el){el.innerText=disp+'提交了结果'});
+if(av)document.getElementById('meCardAvatar').innerHTML='<img src="'+av+'">';
+}
+function switchTab(k,t){
+document.querySelectorAll('.tab-page').forEach(function(p){p.classList.remove('active')});
+document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+document.getElementById('page-'+k).classList.add('active');
+document.getElementById('tab-'+k).classList.add('active');
+const c=document.getElementById('val-company').innerText;
+document.getElementById('mainNavTitle').innerText=(k==='contacts')?c:t;
+const l=document.getElementById('mainNavLeft'),r=document.getElementById('mainNavRight');
+if(k==='msg'){l.innerHTML='<span class="nav-btn" onclick="showToast(\'侧边栏筛选\')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="15" y2="12"/><line x1="4" y1="17" x2="18" y2="17"/></svg></span>';r.innerHTML='<span class="nav-btn" onclick="showToast(\'发起群聊\')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>'}
+else if(k==='doc'){l.innerHTML='';r.innerHTML='<span class="nav-btn" style="font-size:26px;font-weight:300" onclick="showToast(\'新建文档\')">+</span>'}
+else if(k==='workbench'){l.innerHTML='';r.innerHTML='<span class="nav-btn" onclick="showToast(\'管理应用\')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>'}
+else{l.innerHTML='';r.innerHTML=''}
+if(k==='me')syncViews();
+}
+function filterChats(kw){const q=(kw||'').trim().toLowerCase();document.querySelectorAll('#chatListContainer .chat-item').forEach(function(el){el.style.display=el.innerText.toLowerCase().includes(q)?'flex':'none'})}
+function openChat(name,col,icon,firstMsg,el){
+if(el){const b=el.querySelector('.badge');if(b)b.remove()}
+document.getElementById('chatDetailTitle').innerText=name;
+document.getElementById('chatMessagesBox').innerHTML='<div class="msg-row"><div class="chat-avatar" style="width:36px;height:36px;font-size:15px;background:'+col+'">'+icon+'</div><div class="msg-bubble">'+firstMsg+'</div></div>';
+openSubPage('chatDetailSubPage');
+}
+function sendChatMessage(){
+const inp=document.getElementById('chatSendInput'),t=inp.value.trim();if(!t)return;
+const box=document.getElementById('chatMessagesBox');
+box.innerHTML+='<div class="msg-row mine"><div class="chat-avatar" style="width:36px;height:36px;font-size:15px;background:#2f7cf6">我</div><div class="msg-bubble">'+t+'</div></div>';
+inp.value='';box.scrollTop=box.scrollHeight;
+}
+function openSubPage(id){document.getElementById(id).classList.add('open')}
+function closeSubPage(id){document.getElementById(id).classList.remove('open');syncViews()}
+function showToast(m){if(!m)return;const b=document.getElementById('toastBox');b.innerText=m;b.style.display='block';clearTimeout(window._tt);window._tt=setTimeout(function(){b.style.display='none'},1500)}
+function closeModal(){document.getElementById('editModal').style.display='none'}
+function openSingleModal(k,title,allowNone){
+const el=document.getElementById('val-'+k),cur=el.innerText,iv=(allowNone&&cur==='无')?'':(cur==='点击编辑'?'':cur);
+document.getElementById('modalTitle').innerText=title;
+document.getElementById('modalInputs').innerHTML='<input class="modal-input" id="inp-single" value="'+iv+'" placeholder="请输入内容">';
+document.getElementById('editModal').style.display='flex';
+document.getElementById('modalConfirmBtn').onclick=function(){
+const tr=document.getElementById('inp-single').value.trim(),fv=(tr===''&&allowNone)?'无':tr;
+if(fv!==''||!allowNone){el.innerText=fv;localStorage.setItem(k,fv);syncViews()}
+closeModal();
+};
+}
+function openExternalModal(){
+const pe=document.getElementById('val-externalPrefix'),se=document.getElementById('val-externalSuffix'),cp=pe.innerText==='点击编辑'?'':pe.innerText;
+document.getElementById('modalTitle').innerText='修改对外信息显示';
+document.getElementById('modalInputs').innerHTML='<input class="modal-input" id="inp-prefix" value="'+cp+'" placeholder="对外显示名称"><input class="modal-input" id="inp-suffix" value="'+se.innerText+'" placeholder="机构后缀">';
+document.getElementById('editModal').style.display='flex';
+document.getElementById('modalConfirmBtn').onclick=function(){
+const p=document.getElementById('inp-prefix').value.trim(),s=document.getElementById('inp-suffix').value.trim();
+if(p!==''){pe.innerText=p;localStorage.setItem('externalPrefix',p)}
+if(s!==''){se.innerText=s;localStorage.setItem('externalSuffix',s)}
+closeModal();
+};
+}
+function openBottomModal(){
+const ie=document.getElementById('val-bottomId'),de=document.getElementById('val-degree'),ce=document.getElementById('val-college'),ge=document.getElementById('val-grade'),ci=ie.innerText==='点击编辑'?'':ie.innerText;
+document.getElementById('modalTitle').innerText='修改学籍/工号信息';
+document.getElementById('modalInputs').innerHTML='<input class="modal-input" id="inp-id" value="'+ci+'" placeholder="学号/工号"><input class="modal-input" id="inp-degree" value="'+de.innerText+'" placeholder="学历"><input class="modal-input" id="inp-college" value="'+ce.innerText+'" placeholder="学院"><input class="modal-input" id="inp-grade" value="'+ge.innerText+'" placeholder="年级">';
+document.getElementById('editModal').style.display='flex';
+document.getElementById('modalConfirmBtn').onclick=function(){
+const vi=document.getElementById('inp-id').value.trim(),vd=document.getElementById('inp-degree').value.trim(),vc=document.getElementById('inp-college').value.trim(),vg=document.getElementById('inp-grade').value.trim();
+if(vi!==''){ie.innerText=vi;localStorage.setItem('bottomId',vi)}
+if(vd!==''){de.innerText=vd;localStorage.setItem('degree',vd)}
+if(vc!==''){ce.innerText=vc;localStorage.setItem('college',vc)}
+if(vg!==''){ge.innerText=vg;localStorage.setItem('grade',vg)}
+closeModal();
+};
+}
+function toggleGender(){const el=document.getElementById('val-userGender'),nx=el.innerText==='男'?'女':'男';el.innerText=nx;localStorage.setItem('userGender',nx)}
+function changeAvatar(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=function(ev){const b=ev.target.result;document.getElementById('avatarBox').innerHTML='<img src="'+b+'">';localStorage.setItem('userAvatar',b);syncViews()};r.readAsDataURL(f)}
+</script>
+</body>
+</html>
